@@ -6,7 +6,7 @@ import Queue from './Queue';
 import { PeerMessages } from '../../types/MessageTypes';
 import Piece from './Piece';
 
-enum OnlyPeerStates {
+export enum OnlyPeerStates {
     // life cycle
     Connecting = 'connecting',
     AwaitingHandshake = 'awaiting handshake',
@@ -61,31 +61,27 @@ export default class Peer {
         this._pieces = new Piece(torrent);
         this._queue = new Queue(torrent);
 
-        this._socket.on('error', (error) => {
-            console.error(error);
+        this._socket.on('error', () => {
             this.cleanup(OnlyPeerStates.SocketError);
         });
-
-        this.listenToWholeMessages();
 
         this._socket.connect(port, ip, () => {
             this.state = OnlyPeerStates.AwaitingHandshake;
             const message = Messages.buildHandshake(this._torrent);
             this._socket.write(message);
         });
+
+        this.listenToWholeMessages();
     }
 
     private listenToWholeMessages() {
         let savedBuffer = Buffer.alloc(0);
         let isHandshake = true;
 
-        console.log('listening to whole messages');
-
         this._socket.on('data', (receivedBuffer) => {
             const msgLen = () => (isHandshake ? savedBuffer.readUint8(0) + 49 : savedBuffer.readInt32BE(0) + 4);
             savedBuffer = Buffer.concat([savedBuffer, receivedBuffer]);
             while (savedBuffer.length >= 4 && savedBuffer.length >= msgLen()) {
-                console.log('received message');
                 this.handleMessage(savedBuffer.slice(0, msgLen()));
                 savedBuffer = savedBuffer.slice(msgLen());
                 isHandshake = false;
@@ -106,6 +102,7 @@ export default class Peer {
                 case PeerMessages.Choke:
                     return this.cleanup(PeerMessages.Choke);
                 case PeerMessages.Unchoke:
+                    console.warn('unchoked');
                     this._queue.choked = false;
                     this.state = PeerMessages.Unchoke;
                     this.requestPiece();
@@ -128,7 +125,8 @@ export default class Peer {
 
     private handlePiece(piece: { index: number; begin: number; block: Buffer }): void {
         this.state = PeerMessages.Piece;
-        // const doneStats = this._pieces.getStats();
+        const doneStats = this._pieces.getStats();
+        console.log(doneStats);
 
         this._pieces.addReceivedPiece(piece.index, piece.begin);
 
@@ -171,15 +169,16 @@ export default class Peer {
 
     private requestPiece(): void {
         try {
-            if (this._queue.choked) return;
+            if (this._queue.choked) return void console.log('choked');
 
             let nextBlock = this._queue.deque();
             while (nextBlock) {
                 if (this._pieces.needsPiece(nextBlock.index, nextBlock.begin)) {
+                    console.log('requesting');
                     this._socket.write(Messages.buildRequest(nextBlock.index, nextBlock.begin, nextBlock.length));
                     this._pieces.addRequestedPiece(nextBlock.index, nextBlock.begin);
                     break;
-                }
+                } else console.log("don't need");
                 nextBlock = this._queue.deque();
             }
         } catch (error) {
@@ -187,6 +186,7 @@ export default class Peer {
         }
     }
 
+    public ended = false;
     public cleanup(newState: PeerStates) {
         try {
             this._socket.end();
@@ -200,6 +200,7 @@ export default class Peer {
             console.log(`peer ${this.ip} failed to close file`);
             console.log(error);
         }
+        this.ended = true;
         this.state = newState;
     }
 

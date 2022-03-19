@@ -80,7 +80,15 @@ const TorrentRow = ({ torrent }: { torrent: TorrentInfo }) => {
                                     </TableRow>
                                     <TableRow>
                                         <TableCell component="th">Peers</TableCell>
-                                        <TableCell>{peers.length}</TableCell>
+                                        <TableCell>
+                                            <span style={{ color: 'lightgreen' }}>{peers.active}</span>
+                                            {' // '}
+                                            <span style={{ color: 'lightcoral' }}>{peers.discarded}</span>
+                                            {' // '}
+                                            <span style={{ color: 'aquamarine' }}>{peers.available}</span>
+                                            {' // '}
+                                            <span style={{ color: 'gray' }}>{peers.total}</span>
+                                        </TableCell>
                                     </TableRow>
                                     <TableRow>
                                         <TableCell component="th">Seeders</TableCell>

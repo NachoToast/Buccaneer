@@ -243,14 +243,8 @@ export default abstract class Messages {
         return buffer;
     }
 
-    private static _specialMessageTypes: Set<PeerMessages> = new Set([
-        PeerMessages.Request,
-        PeerMessages.Piece,
-        PeerMessages.Cancel,
-    ]);
-
     public static parseMessage(message: Buffer): MessageParseResult {
-        if (message.length <= 4) throw new Error(`Can't parse message shorter than 4 bytes (got ${message.length})`);
+        if (message.length < 5) throw new Error(`Can't parse message shorter than 5 bytes (got ${message.length})`);
         const idNumber = message.readInt8(4);
         const id = peerMessagesMap[idNumber] as PeerMessages | undefined;
         if (!id) throw new Error(`Unexpected message id: ${idNumber}`);

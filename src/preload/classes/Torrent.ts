@@ -74,7 +74,12 @@ export default class Torrent {
             statusSince: this.__lastStatusChange,
             leechers: this._announceResponse?.leechers ?? -1,
             seeders: this._announceResponse?.seeders ?? -1,
-            peers: this._announceResponse?.peers ?? [],
+            peers: {
+                total: this._announceResponse?.peers.length ?? -1,
+                available: this._peerPool.length,
+                active: Object.keys(this._activePeers).length,
+                discarded: Object.keys(this._discardedPeers).length,
+            },
             inputFilePath: this.torrentFilePath,
             outputFilePath: this.outputFilePath,
             numFiles: this.numFiles,
@@ -147,9 +152,9 @@ export default class Torrent {
             return;
         }
 
-        // const peersToAdd = this._peerPool.slice(0, Torrent.MAX_PEERS - numActivePeers);
-        const peersToAdd = this._peerPool.slice(0, 1);
-        console.log(`${this.name} adding ${peersToAdd.length} peers (currently active: ${numActivePeers})`);
+        const peersToAdd = this._peerPool.slice(0, Torrent.MAX_PEERS - numActivePeers);
+        this._peerPool.splice(0, peersToAdd.length);
+        // console.log(`${this.name} adding ${peersToAdd.length} peers (currently active: ${numActivePeers})`);
 
         peersToAdd.forEach(({ ip, port }) => {
             const key = Torrent.makePeerKey(ip, port);
@@ -165,8 +170,21 @@ export default class Torrent {
     }
 
     private handlePeerStateChange(key: string, oldState: PeerStates, newState: PeerStates): void {
-        const peer = this._activePeers[key];
-        console.log(`${peer.ip}:${peer.port} changed state: ${oldState} => ${newState}`);
+        const peer = this._activePeers[key] as Peer | undefined;
+        if (!peer) {
+            console.warn(`Got state change from ${key} which has ended: ${oldState} => ${newState}`);
+            return;
+        }
+
+        if (peer.ended) {
+            delete this._activePeers[key];
+            this._discardedPeers[key] = peer;
+            this._update();
+            this.activatePeers();
+            return;
+        }
+
+        console.log(`${key} changed state: ${oldState} => ${newState}`);
     }
 
     private async announce(): Promise<AnnounceResponse> {

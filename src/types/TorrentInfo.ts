@@ -9,7 +9,12 @@ export default interface TorrentInfo {
     statusSince: number;
     leechers: number;
     seeders: number;
-    peers: { ip: string; port: number }[];
+    peers: {
+        total: number;
+        available: number;
+        active: number;
+        discarded: number;
+    };
     inputFilePath: string;
     outputFilePath: string;
     numFiles: number;
