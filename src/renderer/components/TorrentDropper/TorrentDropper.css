@@ -1,0 +1,15 @@
+.torrentDropper {
+    height: 100%;
+    width: 100%;
+    border: dashed 1px transparent;
+    transition: border 0.1s linear, color 0.1s linear;
+    padding: 1rem;
+    border-radius: 0.2rem;
+    cursor: pointer;
+    color: gray;
+}
+
+.torrentDropper.hovered,
+.torrentDropper:hover {
+    border: dashed 1px gray;
+}

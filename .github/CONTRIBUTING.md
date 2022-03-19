@@ -1,0 +1,3 @@
+# Contributing
+
+Sure lol

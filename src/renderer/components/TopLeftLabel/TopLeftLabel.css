@@ -1,0 +1,13 @@
+.topLeftLabel {
+    position: absolute;
+    top: 0;
+    left: 0;
+    color: gray;
+    cursor: pointer;
+    margin: 3px 5px;
+    transition: color 0.1s linear;
+}
+
+.topLeftLabel:hover {
+    color: lightgray;
+}
