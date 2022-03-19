@@ -1,4 +1,4 @@
-# Buccaneer
+# Buccaneer [![Node.js CI](https://github.com/NachoToast/Buccaneer/actions/workflows/node.js.yml/badge.svg)](https://github.com/NachoToast/Buccaneer/actions/workflows/node.js.yml)
 
 Buccaneer is a torrenting client that uses the [BitTorrent specification](https://wiki.theory.org/BitTorrentSpecification) to download files.
 
